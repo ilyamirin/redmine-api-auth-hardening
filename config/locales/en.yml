@@ -179,6 +179,8 @@ en:
   notice_email_error: "An error occurred while sending mail (%{value})"
   notice_feeds_access_key_reseted: Your Atom access key was reset.
   notice_api_access_key_reseted: Your API access key was reset.
+  notice_personal_access_token_created: Your personal access token was created.
+  notice_personal_access_token_revoked: Your personal access token was revoked.
   notice_failed_to_save_issues: "Failed to save %{count} issue(s) on %{total} selected: %{ids}."
   notice_failed_to_save_time_entries: "Failed to save %{count} time entrie(s) on %{total} selected: %{ids}."
   notice_failed_to_save_members: "Failed to save member(s): %{errors}."
@@ -296,6 +298,7 @@ en:
   field_author: Author
   field_created_on: Created
   field_updated_on: Updated
+  field_expires_on: Expires
   field_closed_on: Closed
   field_field_format: Format
   field_is_for_all: For all projects
@@ -1030,6 +1033,18 @@ en:
   label_api_access_key: API access key
   label_missing_api_access_key: Missing an API access key
   label_api_access_key_created_on: "API access key created %{value} ago"
+  label_personal_access_token: Personal access token
+  label_personal_access_token_plural: Personal access tokens
+  label_personal_access_token_new: New personal access token
+  label_personal_access_token_created: Personal access token created
+  label_personal_access_token_last_used: Last used
+  label_personal_access_token_status_active: Active
+  label_personal_access_token_status_expired: Expired
+  label_personal_access_token_status_revoked: Revoked
+  label_never: Never
+  text_personal_access_tokens_recommended: Use personal access tokens for REST API authentication.
+  text_personal_access_token_plaintext_warning: Copy this token now. It will not be shown again.
+  text_personal_access_token_max_lifetime: "Maximum lifetime: %{count} days."
   label_profile: Profile
   label_subtask: Subtask
   label_subtask_plural: Subtasks
@@ -1188,6 +1203,8 @@ en:
   button_delete: Delete
   button_create: Create
   button_create_and_continue: Create and add another
+  button_manage: Manage
+  button_revoke: Revoke
   button_test: Test
   button_edit: Edit
   button_edit_associated_wikipage: "Edit associated Wiki page: %{page_title}"

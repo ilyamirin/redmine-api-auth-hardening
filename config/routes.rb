@@ -96,6 +96,13 @@ Rails.application.routes.draw do
   match 'my', :controller => 'my', :action => 'index', :via => :get # Redirects to my/page
   get 'my/api_key', :to => 'my#show_api_key', :as => 'my_api_key'
   post 'my/api_key', :to => 'my#reset_api_key'
+  get 'my/personal_access_tokens', :to => 'my#personal_access_tokens', :as => 'my_personal_access_tokens'
+  post 'my/personal_access_tokens', :to => 'my#create_personal_access_token'
+  post(
+    'my/personal_access_tokens/:id/revoke',
+    :to => 'my#revoke_personal_access_token',
+    :as => 'revoke_my_personal_access_token'
+  )
   post 'my/atom_key', :to => 'my#reset_atom_key', :as => 'my_atom_key'
   match 'my/password', :controller => 'my', :action => 'password', :via => [:get, :post]
   match 'my/add_block', :controller => 'my', :action => 'add_block', :via => :post

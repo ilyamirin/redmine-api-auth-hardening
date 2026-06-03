@@ -26,7 +26,14 @@ class MyController < ApplicationController
   accept_api_auth :account
 
   require_sudo_mode :account, only: :put
-  require_sudo_mode :reset_atom_key, :reset_api_key, :show_api_key, :destroy
+  require_sudo_mode(
+    :reset_atom_key,
+    :reset_api_key,
+    :show_api_key,
+    :create_personal_access_token,
+    :revoke_personal_access_token,
+    :destroy
+  )
 
   helper :issues
   helper :users
@@ -148,6 +155,32 @@ class MyController < ApplicationController
     redirect_to my_account_path
   end
 
+  def personal_access_tokens
+    load_personal_access_tokens
+  end
+
+  def create_personal_access_token
+    @personal_access_token =
+      User.current.personal_access_tokens.build(personal_access_token_params)
+
+    if @personal_access_token.save
+      @new_personal_access_token_value = @personal_access_token.plain_value
+      flash.now[:notice] = l(:notice_personal_access_token_created)
+    end
+
+    load_personal_access_tokens
+    render :action => :personal_access_tokens
+  end
+
+  def revoke_personal_access_token
+    token = User.current.personal_access_tokens.find(params[:id])
+    token.revoke!
+    flash[:notice] = l(:notice_personal_access_token_revoked)
+    redirect_to my_personal_access_tokens_path
+  rescue ActiveRecord::RecordNotFound
+    render_404
+  end
+
   def update_page
     @user = User.current
     block_settings = params[:settings] || {}
@@ -197,5 +230,20 @@ class MyController < ApplicationController
     @user.pref.order_blocks params[:group], params[:blocks]
     @user.pref.save
     head :ok
+  end
+
+  private
+
+  def load_personal_access_tokens
+    @user = User.current
+    @personal_access_tokens = @user.personal_access_tokens.sorted
+    @personal_access_token ||=
+      @user.personal_access_tokens.build(
+        :expires_on => PersonalAccessToken.default_expires_on
+      )
+  end
+
+  def personal_access_token_params
+    params.require(:personal_access_token).permit(:name, :expires_on)
   end
 end

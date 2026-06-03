@@ -1,0 +1,82 @@
+<div class="contextual">
+  <%= link_to(sprite_icon('back', l(:button_back)), my_account_path, :class => 'icon icon-back') %>
+</div>
+
+<h2><%= l(:label_personal_access_token_plural) %></h2>
+
+<% if @new_personal_access_token_value.present? %>
+  <div class="box">
+    <p><strong><%= l(:label_personal_access_token_created) %></strong></p>
+    <p><%= l(:text_personal_access_token_plaintext_warning) %></p>
+    <pre class="personal-access-token-value autoscroll"><%= @new_personal_access_token_value %></pre>
+  </div>
+<% end %>
+
+<%= error_messages_for @personal_access_token %>
+
+<%= labelled_form_for :personal_access_token,
+                      @personal_access_token,
+                      :url => my_personal_access_tokens_path,
+                      :html => {:id => 'personal-access-token-form'} do |f| %>
+  <fieldset class="box tabular">
+    <legend><%= l(:label_personal_access_token_new) %></legend>
+    <p><%= f.text_field :name, :required => true, :size => 40 %></p>
+    <p><%= f.date_field :expires_on, :required => true %></p>
+    <p>
+      <em>
+        <%= l(
+              :text_personal_access_token_max_lifetime,
+              :count => PersonalAccessToken.maximum_lifetime_days
+            ) %>
+      </em>
+    </p>
+  </fieldset>
+  <p><%= submit_tag l(:button_create) %></p>
+<% end %>
+
+<% if @personal_access_tokens.any? %>
+  <table class="list personal-access-tokens">
+    <thead>
+      <tr>
+        <th><%= l(:field_name) %></th>
+        <th><%= l(:field_created_on) %></th>
+        <th><%= l(:field_expires_on) %></th>
+        <th><%= l(:label_personal_access_token_last_used) %></th>
+        <th><%= l(:field_status) %></th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @personal_access_tokens.each do |token| %>
+        <tr class="<%= token.status %>">
+          <td class="name"><%= token.name %></td>
+          <td class="created_on"><%= format_time(token.created_on) %></td>
+          <td class="expires_on"><%= format_date(token.expires_on) %></td>
+          <td class="last_used_on">
+            <%= token.last_used_on ? format_time(token.last_used_on) : l(:label_never) %>
+          </td>
+          <td class="status"><%= l(:"label_personal_access_token_status_#{token.status}") %></td>
+          <td class="buttons">
+            <% if token.active? %>
+              <%= link_to(
+                    sprite_icon('del', l(:button_revoke)),
+                    revoke_my_personal_access_token_path(token),
+                    :method => :post,
+                    :data => {:confirm => l(:text_are_you_sure)},
+                    :class => 'icon icon-del'
+                  ) %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="nodata"><%= l(:label_no_data) %></p>
+<% end %>
+
+<% content_for :sidebar do %>
+  <%= render :partial => 'sidebar' %>
+<% end %>
+
+<% html_title(l(:label_personal_access_token_plural)) -%>

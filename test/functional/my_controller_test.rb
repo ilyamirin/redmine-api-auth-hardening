@@ -832,4 +832,85 @@ class MyControllerTest < Redmine::ControllerTest
     assert_match /reset/, flash[:notice]
     assert_redirected_to '/my/account'
   end
+
+  def test_personal_access_tokens
+    PersonalAccessToken.create!(
+      :user_id => 2,
+      :name => 'CLI',
+      :expires_on => 30.days.from_now.to_date
+    )
+
+    get :personal_access_tokens
+
+    assert_response :success
+    assert_select 'h2', 'Personal access tokens'
+    assert_select 'input[name=?]', 'personal_access_token[name]'
+    assert_select 'table.personal-access-tokens tbody tr', 1
+    assert_select 'td.name', :text => 'CLI'
+  end
+
+  def test_create_personal_access_token
+    assert_difference 'PersonalAccessToken.where(:user_id => 2).count' do
+      post(
+        :create_personal_access_token,
+        :params => {
+          :personal_access_token => {
+            :name => 'New API client',
+            :expires_on => 15.days.from_now.to_date.to_s
+          }
+        }
+      )
+    end
+
+    token = PersonalAccessToken.where(:user_id => 2).order(:id => :desc).first
+    assert_response :success
+    assert_select 'pre.personal-access-token-value', /^redmine_pat_/
+    assert_select 'td.name', :text => 'New API client'
+    assert_not_include token.token_digest, 'redmine_pat_'
+  end
+
+  def test_create_personal_access_token_with_invalid_attributes
+    assert_no_difference 'PersonalAccessToken.count' do
+      post(
+        :create_personal_access_token,
+        :params => {
+          :personal_access_token => {
+            :name => '',
+            :expires_on => Date.yesterday.to_s
+          }
+        }
+      )
+    end
+
+    assert_response :success
+    assert_select '#errorExplanation'
+  end
+
+  def test_revoke_personal_access_token
+    token =
+      PersonalAccessToken.create!(
+        :user_id => 2,
+        :name => 'CLI',
+        :expires_on => 30.days.from_now.to_date
+      )
+
+    post :revoke_personal_access_token, :params => {:id => token.id}
+
+    assert_redirected_to my_personal_access_tokens_path
+    assert token.reload.revoked?
+  end
+
+  def test_revoke_personal_access_token_should_not_revoke_another_users_token
+    token =
+      PersonalAccessToken.create!(
+        :user_id => 3,
+        :name => 'Other user',
+        :expires_on => 30.days.from_now.to_date
+      )
+
+    post :revoke_personal_access_token, :params => {:id => token.id}
+
+    assert_response 404
+    assert_not token.reload.revoked?
+  end
 end
