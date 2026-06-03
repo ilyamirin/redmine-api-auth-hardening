@@ -52,16 +52,42 @@ Deferred work:
 
 ## How to Run
 
+Use the normal Redmine setup flow for version `6.1.2`: install the required Ruby and Bundler versions, install gems, configure `config/database.yml`, then run migrations.
+
 ```bash
-BUNDLE_USER_HOME=.bundle/home \
-PATH=/opt/homebrew/opt/ruby@3.3/bin:/opt/homebrew/lib/ruby/gems/3.3.0/bin:$PATH \
+bundle install
 bundle exec rake db:migrate
 ```
 
+For a local development smoke test, start Rails in the usual way:
+
 ```bash
-BUNDLE_USER_HOME=.bundle/home \
-PATH=/opt/homebrew/opt/ruby@3.3/bin:/opt/homebrew/lib/ruby/gems/3.3.0/bin:$PATH \
-bundle exec rails server -b 127.0.0.1 -p 3001
+bundle exec rails server
+```
+
+For the test environment:
+
+```bash
+RAILS_ENV=test bundle exec rake db:migrate
+bundle exec rails test
+```
+
+If you prefer to run only the focused verification suite for this slice:
+
+```bash
+bundle exec ruby test/unit/personal_access_token_test.rb
+bundle exec ruby test/integration/api_test/authentication_test.rb
+bundle exec ruby test/functional/my_controller_test.rb
+bundle exec ruby test/functional/admin_controller_test.rb
+bundle exec ruby test/functional/settings_controller_test.rb
+```
+
+On a fresh clone, the essential sequence is:
+
+```bash
+bundle install
+bundle exec rake db:migrate
+bundle exec rails server
 ```
 
 Enable REST API in:
