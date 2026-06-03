@@ -21,12 +21,12 @@ class PersonalAccessToken < ApplicationRecord
 
   before_validation :generate_token_digest, :on => :create
 
-  validates :user, :name, :token_digest, :expires_on, :presence => true
+  validates :name, :token_digest, :expires_on, :presence => true
   validates :token_digest, :uniqueness => true
   validate :validate_expires_on
 
-  scope :active, -> {where(:revoked_on => nil).where('expires_on >= ?', Date.current)}
-  scope :expired, -> {where(:revoked_on => nil).where('expires_on < ?', Date.current)}
+  scope :active, -> {where(:revoked_on => nil).where(:expires_on => Date.current..)}
+  scope :expired, -> {where(:revoked_on => nil).where(:expires_on => ...Date.current)}
   scope :revoked, -> {where.not(:revoked_on => nil)}
   scope :sorted, -> {order(:created_on => :desc, :id => :desc)}
 

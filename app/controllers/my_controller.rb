@@ -237,10 +237,12 @@ class MyController < ApplicationController
   def load_personal_access_tokens
     @user = User.current
     @personal_access_tokens = @user.personal_access_tokens.sorted
-    @personal_access_token ||=
-      @user.personal_access_tokens.build(
-        :expires_on => PersonalAccessToken.default_expires_on
-      )
+    if @personal_access_token.nil?
+      @personal_access_token =
+        @user.personal_access_tokens.build(
+          :expires_on => PersonalAccessToken.default_expires_on
+        )
+    end
   end
 
   def personal_access_token_params

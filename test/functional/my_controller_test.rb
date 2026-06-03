@@ -910,7 +910,7 @@ class MyControllerTest < Redmine::ControllerTest
 
     post :revoke_personal_access_token, :params => {:id => token.id}
 
-    assert_response 404
+    assert_response :not_found
     assert_not token.reload.revoked?
   end
 end

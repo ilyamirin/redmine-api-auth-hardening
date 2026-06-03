@@ -127,7 +127,7 @@ class AdminControllerTest < Redmine::ControllerTest
 
     get :personal_access_tokens
 
-    assert_response 403
+    assert_response :forbidden
   end
 
   def test_projects_should_show_only_active_projects_by_default
