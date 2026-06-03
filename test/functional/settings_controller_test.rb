@@ -39,6 +39,34 @@ class SettingsControllerTest < Redmine::ControllerTest
     assert_select 'input[name=?][value=""]', 'settings[enabled_scm][]'
   end
 
+  def test_get_edit_api_should_show_personal_access_token_max_lifetime
+    get :edit, :params => {:tab => 'api'}
+    assert_response :success
+
+    assert_select(
+      'input[name=?][value=?]',
+      'settings[personal_access_token_max_lifetime]',
+      Setting.personal_access_token_max_lifetime.to_s
+    )
+  end
+
+  def test_post_edit_api_should_update_personal_access_token_max_lifetime
+    post(
+      :edit,
+      :params => {
+        :tab => 'api',
+        :settings => {
+          :rest_api_enabled => '1',
+          :jsonp_enabled => '0',
+          :personal_access_token_max_lifetime => '45'
+        }
+      }
+    )
+
+    assert_redirected_to '/settings?tab=api'
+    assert_equal 45, Setting.personal_access_token_max_lifetime.to_i
+  end
+
   def test_get_edit_should_preselect_default_issue_list_columns
     with_settings :issue_list_default_columns => %w(tracker subject status updated_on) do
       get :edit

@@ -384,6 +384,12 @@ Rails.application.routes.draw do
 
   get 'admin', :to => 'admin#index'
   get 'admin/projects', :to => 'admin#projects'
+  get 'admin/personal_access_tokens', :to => 'admin#personal_access_tokens', :as => 'admin_personal_access_tokens'
+  post(
+    'admin/personal_access_tokens/:id/revoke',
+    :to => 'admin#revoke_personal_access_token',
+    :as => 'revoke_admin_personal_access_token'
+  )
   get 'admin/plugins', :to => 'admin#plugins'
   get 'admin/info', :to => 'admin#info'
   post 'admin/test_email', :to => 'admin#test_email', :as => 'test_email'

@@ -36,6 +36,100 @@ class AdminControllerTest < Redmine::ControllerTest
     assert_select 'div.nodata'
   end
 
+  def test_personal_access_tokens
+    active_token =
+      PersonalAccessToken.create!(
+        :user_id => 2,
+        :name => 'Active client',
+        :expires_on => 30.days.from_now.to_date
+      )
+    expired_token =
+      PersonalAccessToken.create!(
+        :user_id => 2,
+        :name => 'Expired client',
+        :expires_on => 30.days.from_now.to_date
+      )
+    expired_token.update_column(:expires_on, Date.yesterday)
+    revoked_token =
+      PersonalAccessToken.create!(
+        :user_id => 3,
+        :name => 'Revoked client',
+        :expires_on => 30.days.from_now.to_date
+      )
+    revoked_token.revoke!
+
+    get :personal_access_tokens
+
+    assert_response :success
+    assert_select 'h2', 'Personal access tokens'
+    assert_select 'table.personal-access-tokens tbody tr', 1
+    assert_select 'td.name', :text => active_token.name
+    assert_select 'td.name', :text => expired_token.name, :count => 0
+    assert_select 'td.name', :text => revoked_token.name, :count => 0
+    assert_select 'td.user a', :text => User.find(2).name
+  end
+
+  def test_personal_access_tokens_with_status_filter
+    active_token =
+      PersonalAccessToken.create!(
+        :user_id => 2,
+        :name => 'Active client',
+        :expires_on => 30.days.from_now.to_date
+      )
+    expired_token =
+      PersonalAccessToken.create!(
+        :user_id => 2,
+        :name => 'Expired client',
+        :expires_on => 30.days.from_now.to_date
+      )
+    expired_token.update_column(:expires_on, Date.yesterday)
+    revoked_token =
+      PersonalAccessToken.create!(
+        :user_id => 3,
+        :name => 'Revoked client',
+        :expires_on => 30.days.from_now.to_date
+      )
+    revoked_token.revoke!
+
+    get :personal_access_tokens, :params => {:status => 'all'}
+    assert_response :success
+    assert_select 'table.personal-access-tokens tbody tr', 3
+
+    get :personal_access_tokens, :params => {:status => 'expired'}
+    assert_response :success
+    assert_select 'table.personal-access-tokens tbody tr', 1
+    assert_select 'td.name', :text => expired_token.name
+    assert_select 'td.name', :text => active_token.name, :count => 0
+    assert_select 'td.name', :text => revoked_token.name, :count => 0
+
+    get :personal_access_tokens, :params => {:status => 'revoked'}
+    assert_response :success
+    assert_select 'table.personal-access-tokens tbody tr', 1
+    assert_select 'td.name', :text => revoked_token.name
+  end
+
+  def test_revoke_personal_access_token
+    token =
+      PersonalAccessToken.create!(
+        :user_id => 2,
+        :name => 'CLI',
+        :expires_on => 30.days.from_now.to_date
+      )
+
+    post :revoke_personal_access_token, :params => {:id => token.id}
+
+    assert_redirected_to admin_personal_access_tokens_path
+    assert token.reload.revoked?
+  end
+
+  def test_personal_access_tokens_should_require_admin
+    @request.session[:user_id] = 2
+
+    get :personal_access_tokens
+
+    assert_response 403
+  end
+
   def test_projects_should_show_only_active_projects_by_default
     p = Project.find(1)
     p.update_column :status, 5

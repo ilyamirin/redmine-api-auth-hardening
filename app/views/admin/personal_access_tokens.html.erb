@@ -1,0 +1,66 @@
+<h2><%= l(:label_personal_access_token_plural) %></h2>
+
+<%= form_tag(admin_personal_access_tokens_path, :method => :get) do %>
+  <fieldset><legend><%= l(:label_filter_plural) %></legend>
+    <label for="status"><%= l(:field_status) %>:</label>
+    <%= select_tag(
+          'status',
+          options_for_select(
+            [
+              [l(:label_personal_access_token_status_active), 'active'],
+              [l(:label_personal_access_token_status_expired), 'expired'],
+              [l(:label_personal_access_token_status_revoked), 'revoked'],
+              [l(:label_all), 'all']
+            ],
+            @status
+          ),
+          :onchange => 'this.form.submit(); return false;'
+        ) %>
+    <%= submit_tag l(:button_apply), :class => "small", :name => nil %>
+  </fieldset>
+<% end %>
+
+<% if @personal_access_tokens.any? %>
+  <table class="list personal-access-tokens">
+    <thead>
+      <tr>
+        <th><%= l(:field_name) %></th>
+        <th><%= l(:label_user) %></th>
+        <th><%= l(:field_created_on) %></th>
+        <th><%= l(:field_expires_on) %></th>
+        <th><%= l(:label_personal_access_token_last_used) %></th>
+        <th><%= l(:field_status) %></th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @personal_access_tokens.each do |token| %>
+        <tr class="<%= token.status %>">
+          <td class="name"><%= token.name %></td>
+          <td class="user"><%= link_to_user(token.user) %></td>
+          <td class="created_on"><%= format_time(token.created_on) %></td>
+          <td class="expires_on"><%= format_date(token.expires_on) %></td>
+          <td class="last_used_on">
+            <%= token.last_used_on ? format_time(token.last_used_on) : l(:label_never) %>
+          </td>
+          <td class="status"><%= l(:"label_personal_access_token_status_#{token.status}") %></td>
+          <td class="buttons">
+            <% if token.active? %>
+              <%= link_to(
+                    sprite_icon('del', l(:button_revoke)),
+                    revoke_admin_personal_access_token_path(token),
+                    :method => :post,
+                    :data => {:confirm => l(:text_are_you_sure)},
+                    :class => 'icon icon-del'
+                  ) %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="nodata"><%= l(:label_no_data) %></p>
+<% end %>
+
+<% html_title(l(:label_personal_access_token_plural)) -%>

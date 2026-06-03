@@ -26,7 +26,7 @@ class PersonalAccessToken < ApplicationRecord
   validate :validate_expires_on
 
   scope :active, -> {where(:revoked_on => nil).where('expires_on >= ?', Date.current)}
-  scope :expired, -> {where('expires_on < ?', Date.current)}
+  scope :expired, -> {where(:revoked_on => nil).where('expires_on < ?', Date.current)}
   scope :revoked, -> {where.not(:revoked_on => nil)}
   scope :sorted, -> {order(:created_on => :desc, :id => :desc)}
 

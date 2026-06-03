@@ -23,8 +23,10 @@ class AdminController < ApplicationController
   menu_item :projects, :only => :projects
   menu_item :plugins, :only => :plugins
   menu_item :info, :only => :info
+  menu_item :personal_access_tokens, :only => :personal_access_tokens
 
   before_action :require_admin
+  require_sudo_mode :revoke_personal_access_token
 
   helper :queries
   include QueriesHelper
@@ -46,6 +48,21 @@ class AdminController < ApplicationController
 
   def plugins
     @plugins = Redmine::Plugin.all
+  end
+
+  def personal_access_tokens
+    @status = personal_access_token_status_param
+    @personal_access_tokens =
+      personal_access_tokens_scope(@status).includes(:user).sorted
+  end
+
+  def revoke_personal_access_token
+    token = PersonalAccessToken.find(params[:id])
+    token.revoke!
+    flash[:notice] = l(:notice_personal_access_token_revoked)
+    redirect_to admin_personal_access_tokens_path
+  rescue ActiveRecord::RecordNotFound
+    render_404
   end
 
   # Loads the default configuration
@@ -82,5 +99,25 @@ class AdminController < ApplicationController
       [:text_gs_available,             Redmine::Thumbnail.gs_available?]
     ]
     @checklist << [:text_default_active_job_queue_changed, Rails.application.config.active_job.queue_adapter != :async] if Rails.env.production?
+  end
+
+  private
+
+  def personal_access_token_status_param
+    status = params[:status].presence || 'active'
+    %w[active expired revoked all].include?(status) ? status : 'active'
+  end
+
+  def personal_access_tokens_scope(status)
+    case status
+    when 'expired'
+      PersonalAccessToken.expired
+    when 'revoked'
+      PersonalAccessToken.revoked
+    when 'all'
+      PersonalAccessToken.all
+    else
+      PersonalAccessToken.active
+    end
   end
 end

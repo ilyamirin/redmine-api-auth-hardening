@@ -154,6 +154,34 @@ class PersonalAccessTokenTest < ActiveSupport::TestCase
     assert_equal 'revoked', revoked.status
   end
 
+  test "status scopes should be exclusive" do
+    active =
+      PersonalAccessToken.create!(
+        :user => User.find(2),
+        :name => 'Active',
+        :expires_on => 30.days.from_now.to_date
+      )
+    expired =
+      PersonalAccessToken.create!(
+        :user => User.find(2),
+        :name => 'Expired',
+        :expires_on => 30.days.from_now.to_date
+      )
+    expired.update_column(:expires_on, Date.yesterday)
+    revoked =
+      PersonalAccessToken.create!(
+        :user => User.find(2),
+        :name => 'Revoked',
+        :expires_on => 30.days.from_now.to_date
+      )
+    revoked.revoke!
+
+    assert_includes PersonalAccessToken.active, active
+    assert_includes PersonalAccessToken.expired, expired
+    assert_includes PersonalAccessToken.revoked, revoked
+    assert_not_includes PersonalAccessToken.expired, revoked
+  end
+
   test "touch_last_used should update last_used_on at most once per hour" do
     token =
       PersonalAccessToken.create!(
