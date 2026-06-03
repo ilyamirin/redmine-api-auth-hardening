@@ -90,6 +90,79 @@ class Redmine::ApiTest::AuthenticationTest < Redmine::ApiTest::Base
     assert_response :ok
   end
 
+  def test_api_should_accept_auth_using_personal_access_token_header
+    user = User.generate!
+    token =
+      PersonalAccessToken.create!(
+        :user => user,
+        :name => 'API client',
+        :expires_on => 30.days.from_now.to_date
+      )
+    plain_value = token.plain_value
+
+    get "/users/current.xml", :headers => {'X-Redmine-Personal-Access-Token' => plain_value}
+    assert_response :ok
+    assert_select 'user id', :text => user.id.to_s
+    assert_not_nil token.reload.last_used_on
+  end
+
+  def test_api_should_deny_auth_using_expired_personal_access_token_header
+    user = User.generate!
+    token =
+      PersonalAccessToken.create!(
+        :user => user,
+        :name => 'Expired API client',
+        :expires_on => 30.days.from_now.to_date
+      )
+    plain_value = token.plain_value
+    token.update_column(:expires_on, Date.yesterday)
+
+    get "/users/current.xml", :headers => {'X-Redmine-Personal-Access-Token' => plain_value}
+    assert_response :unauthorized
+  end
+
+  def test_api_should_deny_auth_using_revoked_personal_access_token_header
+    user = User.generate!
+    token =
+      PersonalAccessToken.create!(
+        :user => user,
+        :name => 'Revoked API client',
+        :expires_on => 30.days.from_now.to_date
+      )
+    plain_value = token.plain_value
+    token.revoke!
+
+    get "/users/current.xml", :headers => {'X-Redmine-Personal-Access-Token' => plain_value}
+    assert_response :unauthorized
+  end
+
+  def test_api_should_not_accept_personal_access_token_as_key_parameter
+    user = User.generate!
+    token =
+      PersonalAccessToken.create!(
+        :user => user,
+        :name => 'URL client',
+        :expires_on => 30.days.from_now.to_date
+      )
+
+    get "/users/current.xml?key=#{token.plain_value}"
+    assert_response :unauthorized
+  end
+
+  def test_api_should_not_fallback_when_personal_access_token_header_is_invalid
+    user = User.generate!
+    legacy_token = Token.create!(:user => user, :action => 'api')
+
+    get(
+      "/users/current.xml",
+      :headers => {
+        'X-Redmine-Personal-Access-Token' => 'redmine_pat_invalid',
+        'X-Redmine-API-Key' => legacy_token.value.to_s
+      }
+    )
+    assert_response :unauthorized
+  end
+
   def test_api_should_deny_auth_using_wrong_api_key_as_request_header
     user = User.generate!
     token = Token.create!(:user => user, :action => 'feeds') # not the API key

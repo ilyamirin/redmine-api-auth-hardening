@@ -128,7 +128,13 @@ class ApplicationController < ActionController::Base
       end
     end
     if user.nil? && Setting.rest_api_enabled? && accept_api_auth?
-      if (key = api_key_from_request)
+      if (personal_access_token = personal_access_token_from_request)
+        token = PersonalAccessToken.find_active_by_plaintext_token(personal_access_token)
+        if token
+          token.touch_last_used!
+          user = token.user
+        end
+      elsif (key = api_key_from_request)
         # Use API key
         user = User.find_by_api_key(key)
       elsif access_token = Doorkeeper.authenticate(request)
@@ -731,6 +737,11 @@ class ApplicationController < ActionController::Base
     elsif request.headers["X-Redmine-API-Key"].present?
       request.headers["X-Redmine-API-Key"].to_s
     end
+  end
+
+  # Returns the personal access token present in the request
+  def personal_access_token_from_request
+    request.headers["X-Redmine-Personal-Access-Token"].to_s.presence
   end
 
   # Returns the API 'switch user' value if present
